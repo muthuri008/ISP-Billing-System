@@ -6,8 +6,6 @@ use App\Models\ServiceAccount;
 use App\Services\Network\ServiceAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class ServiceAccountController extends Controller
 {
@@ -26,7 +24,7 @@ class ServiceAccountController extends Controller
             'password'=>['required','string','min:10','max:128'], 'access_type'=>['required','in:pppoe,hotspot,static'],
             'mac_address'=>['nullable','string','max:32'], 'ip_address'=>['nullable','ip'],
         ]);
-        $data['password_hash']=Hash::make($data['password']); unset($data['password']);
+        $data['password_hash']=$data['password']; unset($data['password']);
         return response()->json(['data'=>ServiceAccount::create($data)->load(['customer','router'])],201);
     }
 
