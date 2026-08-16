@@ -2,21 +2,50 @@
 namespace App\Services\Radius;
 
 use App\Models\Customer;
-use App\Models\Subscription;
 use App\Models\RadiusUser;
-use Illuminate\Support\Facades\Hash;
-use RuntimeException;
+use App\Models\ServiceAccount;
+use App\Models\Subscription;
 
 class RadiusService
 {
     public function provision(Customer $customer, Subscription $subscription, string $password): RadiusUser
     {
-        $username=$customer->customer_number ?? 'cust-'.$customer->id;
-        $attributes=['subscription_id'=>$subscription->id,'package_id'=>$subscription->package_id];
-        return RadiusUser::updateOrCreate(['customer_id'=>$customer->id],['username'=>$username,'password_hash'=>Hash::make($password),'status'=>'active','attributes'=>$attributes]);
+        $service=ServiceAccount::firstOrNew(['subscription_id'=>$subscription->id]);
+        $service->fill([
+            'customer_id'=>$customer->id,
+            'username'=>$customer->customer_number ?? 'cust-'.$customer->id,
+            'password_hash'=>$password,
+            'status'=>'active',
+        ]);
+        $service->save();
+
+        return RadiusUser::updateOrCreate(
+            ['service_account_id'=>$service->id],
+            [
+                'username'=>$service->username,
+                'auth_type'=>'pap',
+                'password'=>$password,
+                'status'=>'active',
+            ]
+        );
     }
 
-    public function suspend(RadiusUser $user): RadiusUser { $user->update(['status'=>'suspended']); return $user->fresh(); }
-    public function activate(RadiusUser $user): RadiusUser { $user->update(['status'=>'active']); return $user->fresh(); }
-    public function disconnect(RadiusUser $user): bool { return $user->update(['status'=>'disconnected']); }
+    public function suspend(RadiusUser $user): RadiusUser
+    {
+        $user->update(['status'=>'suspended']);
+        if ($user->serviceAccount) $user->serviceAccount->update(['status'=>'suspended']);
+        return $user->fresh();
+    }
+
+    public function activate(RadiusUser $user): RadiusUser
+    {
+        $user->update(['status'=>'active']);
+        if ($user->serviceAccount) $user->serviceAccount->update(['status'=>'active']);
+        return $user->fresh();
+    }
+
+    public function disconnect(RadiusUser $user): bool
+    {
+        return (bool) $user->update(['status'=>'disconnected']);
+    }
 }
