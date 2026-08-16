@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\FinanceReportController;
+use App\Http\Controllers\Api\V1\MpesaCallbackController;
 use App\Http\Controllers\Api\V1\PackageController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PaymentSettlementController;
@@ -19,6 +20,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
         });
     });
+
+    Route::post('/payments/mpesa/callback', MpesaCallbackController::class)->middleware('throttle:60,1');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::middleware('permission:users.manage')->prefix('admin')->group(function () {
