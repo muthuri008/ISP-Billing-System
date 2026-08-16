@@ -4,8 +4,8 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('isp:about', function () {
-    $this->info('ISP Billing System');
-    $this->line('Backend foundation is installed.');
+    $this->info('Stellar Technologies ISP Billing System');
+    $this->line('Billing, payments and network service lifecycle automation is installed.');
 });
 
 Schedule::command('billing:generate-invoices')
@@ -13,7 +13,7 @@ Schedule::command('billing:generate-invoices')
     ->withoutOverlapping()
     ->onOneServer();
 
-Schedule::command('billing:enforce-service')
+Schedule::command('billing:enforce-lifecycle --grace=3')
     ->dailyAt('00:20')
     ->withoutOverlapping()
     ->onOneServer();
