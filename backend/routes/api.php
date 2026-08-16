@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\CustomerInvoiceController;
+use App\Http\Controllers\Api\V1\CustomerPaymentController;
+use App\Http\Controllers\Api\V1\CustomerPaymentHistoryController;
 use App\Http\Controllers\Api\V1\CustomerPortalController;
 use App\Http\Controllers\Api\V1\FinanceReportController;
 use App\Http\Controllers\Api\V1\MpesaCallbackController;
@@ -20,9 +22,13 @@ Route::prefix('v1')->group(function () {
     });
     Route::post('/payments/mpesa/callback', MpesaCallbackController::class)->middleware('throttle:60,1');
     Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/customer-portal/dashboard', [CustomerPortalController::class, 'dashboard']);
-        Route::get('/customer-portal/invoices', [CustomerInvoiceController::class, 'index']);
-        Route::get('/customer-portal/invoices/{invoice}', [CustomerInvoiceController::class, 'show']);
+        Route::prefix('customer-portal')->group(function () {
+            Route::get('/dashboard', [CustomerPortalController::class, 'dashboard']);
+            Route::get('/invoices', [CustomerInvoiceController::class, 'index']);
+            Route::get('/invoices/{invoice}', [CustomerInvoiceController::class, 'show']);
+            Route::post('/invoices/{invoice}/pay', [CustomerPaymentController::class, 'payInvoice']);
+            Route::get('/payments', [CustomerPaymentHistoryController::class, 'index']);
+        });
         Route::middleware('permission:users.manage')->prefix('admin')->group(function () { Route::apiResource('users', UserController::class)->except(['create', 'edit']); });
         Route::middleware('permission:customers.manage')->apiResource('customers', CustomerController::class)->except(['create', 'edit']);
         Route::middleware('permission:packages.manage')->apiResource('packages', PackageController::class)->except(['create', 'edit']);
