@@ -12,3 +12,8 @@ Schedule::command('billing:generate-invoices')
     ->dailyAt('00:05')
     ->withoutOverlapping()
     ->onOneServer();
+
+Schedule::command('billing:enforce-service')
+    ->dailyAt('00:20')
+    ->withoutOverlapping()
+    ->onOneServer();
