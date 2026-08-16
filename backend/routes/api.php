@@ -13,42 +13,23 @@ use App\Http\Controllers\Api\V1\PackageController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PaymentSettlementController;
 use App\Http\Controllers\Api\V1\NetworkController;
+use App\Http\Controllers\Api\V1\ServiceAccountController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
-    Route::get('/health', fn () => response()->json(['status' => 'ok', 'service' => 'isp-billing-api', 'version' => 'v1']));
-    Route::prefix('auth')->group(function () {
-        Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
-        Route::middleware('auth:sanctum')->group(function () { Route::get('/me', [AuthController::class, 'me']); Route::post('/logout', [AuthController::class, 'logout']); });
-    });
-    Route::post('/payments/mpesa/callback', MpesaCallbackController::class)->middleware('throttle:60,1');
+    Route::get('/health', fn () => response()->json(['status'=>'ok','service'=>'stellar-technologies-api','version'=>'v1']));
+    Route::prefix('auth')->group(function () { Route::post('/login',[AuthController::class,'login'])->middleware('throttle:login'); Route::middleware('auth:sanctum')->group(function(){Route::get('/me',[AuthController::class,'me']);Route::post('/logout',[AuthController::class,'logout']);}); });
+    Route::post('/payments/mpesa/callback',MpesaCallbackController::class)->middleware('throttle:60,1');
     Route::middleware('auth:sanctum')->group(function () {
-        Route::prefix('customer-portal')->group(function () {
-            Route::get('/dashboard', [CustomerPortalController::class, 'dashboard']);
-            Route::get('/invoices', [CustomerInvoiceController::class, 'index']);
-            Route::get('/invoices/{invoice}', [CustomerInvoiceController::class, 'show']);
-            Route::post('/invoices/{invoice}/pay', [CustomerPaymentController::class, 'payInvoice']);
-            Route::get('/payments', [CustomerPaymentHistoryController::class, 'index']);
-        });
-        Route::middleware('permission:users.manage')->prefix('admin')->group(function () { Route::apiResource('users', UserController::class)->except(['create', 'edit']); });
-        Route::middleware('permission:customers.manage')->apiResource('customers', CustomerController::class)->except(['create', 'edit']);
-        Route::middleware('permission:packages.manage')->apiResource('packages', PackageController::class)->except(['create', 'edit']);
-        Route::middleware('permission:subscriptions.manage')->prefix('subscriptions')->group(function () {
-            Route::get('/', [SubscriptionController::class, 'index']);
-            Route::post('/', [SubscriptionController::class, 'store']);
-            Route::get('/{subscription}', [SubscriptionController::class, 'show']);
-            Route::post('/{subscription}/activate', [SubscriptionController::class, 'activate']);
-            Route::post('/{subscription}/suspend', [SubscriptionController::class, 'suspend']);
-            Route::post('/{subscription}/cancel', [SubscriptionController::class, 'cancel']);
-        });
-        Route::middleware('permission:payments.manage')->group(function () { Route::get('/payments', [PaymentController::class, 'index']); Route::post('/payments', [PaymentController::class, 'store']); Route::post('/payments/{payment}/allocate', [PaymentController::class, 'allocate']); Route::post('/payments/{payment}/settle', [PaymentSettlementController::class, 'settle']); });
-        Route::middleware('permission:network.manage')->prefix('network')->group(function () {
-            Route::get('/routers', [NetworkController::class, 'routers']);
-            Route::get('/routers/{router}/health', [NetworkController::class, 'health']);
-            Route::get('/routers/{router}/sessions', [NetworkController::class, 'sessions']);
-            Route::post('/routers/{router}/sessions/disconnect', [NetworkController::class, 'disconnect']);
-        });
-        Route::middleware('permission:reports.view')->prefix('reports')->group(function () { Route::get('/finance/summary', [FinanceReportController::class, 'summary']); Route::get('/finance/revenue', [FinanceReportController::class, 'revenue']); });
+        Route::prefix('customer-portal')->group(function(){Route::get('/dashboard',[CustomerPortalController::class,'dashboard']);Route::get('/invoices',[CustomerInvoiceController::class,'index']);Route::get('/invoices/{invoice}',[CustomerInvoiceController::class,'show']);Route::post('/invoices/{invoice}/pay',[CustomerPaymentController::class,'payInvoice']);Route::get('/payments',[CustomerPaymentHistoryController::class,'index']);});
+        Route::middleware('permission:users.manage')->prefix('admin')->group(function(){Route::apiResource('users',UserController::class)->except(['create','edit']);});
+        Route::middleware('permission:customers.manage')->apiResource('customers',CustomerController::class)->except(['create','edit']);
+        Route::middleware('permission:packages.manage')->apiResource('packages',PackageController::class)->except(['create','edit']);
+        Route::middleware('permission:subscriptions.manage')->prefix('subscriptions')->group(function(){Route::get('/',[SubscriptionController::class,'index']);Route::post('/',[SubscriptionController::class,'store']);Route::get('/{subscription}',[SubscriptionController::class,'show']);Route::post('/{subscription}/activate',[SubscriptionController::class,'activate']);Route::post('/{subscription}/suspend',[SubscriptionController::class,'suspend']);Route::post('/{subscription}/cancel',[SubscriptionController::class,'cancel']);Route::post('/{subscription}/provision',[ServiceAccountController::class,'provision']);});
+        Route::middleware('permission:network.manage')->prefix('service-accounts')->group(function(){Route::get('/',[ServiceAccountController::class,'index']);Route::post('/',[ServiceAccountController::class,'store']);Route::post('/{serviceAccount}/activate',[ServiceAccountController::class,'activate']);Route::post('/{serviceAccount}/suspend',[ServiceAccountController::class,'suspend']);});
+        Route::middleware('permission:payments.manage')->group(function(){Route::get('/payments',[PaymentController::class,'index']);Route::post('/payments',[PaymentController::class,'store']);Route::post('/payments/{payment}/allocate',[PaymentController::class,'allocate']);Route::post('/payments/{payment}/settle',[PaymentSettlementController::class,'settle']);});
+        Route::middleware('permission:network.manage')->prefix('network')->group(function(){Route::get('/routers',[NetworkController::class,'routers']);Route::get('/routers/{router}/health',[NetworkController::class,'health']);Route::get('/routers/{router}/sessions',[NetworkController::class,'sessions']);Route::post('/routers/{router}/sessions/disconnect',[NetworkController::class,'disconnect']);});
+        Route::middleware('permission:reports.view')->prefix('reports')->group(function(){Route::get('/finance/summary',[FinanceReportController::class,'summary']);Route::get('/finance/revenue',[FinanceReportController::class,'revenue']);});
     });
 });
