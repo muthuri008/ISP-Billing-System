@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\MpesaCallbackController;
 use App\Http\Controllers\Api\V1\PackageController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PaymentSettlementController;
+use App\Http\Controllers\Api\V1\NetworkController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -33,6 +34,12 @@ Route::prefix('v1')->group(function () {
         Route::middleware('permission:customers.manage')->apiResource('customers', CustomerController::class)->except(['create', 'edit']);
         Route::middleware('permission:packages.manage')->apiResource('packages', PackageController::class)->except(['create', 'edit']);
         Route::middleware('permission:payments.manage')->group(function () { Route::get('/payments', [PaymentController::class, 'index']); Route::post('/payments', [PaymentController::class, 'store']); Route::post('/payments/{payment}/allocate', [PaymentController::class, 'allocate']); Route::post('/payments/{payment}/settle', [PaymentSettlementController::class, 'settle']); });
+        Route::middleware('permission:network.manage')->prefix('network')->group(function () {
+            Route::get('/routers', [NetworkController::class, 'routers']);
+            Route::get('/routers/{router}/health', [NetworkController::class, 'health']);
+            Route::get('/routers/{router}/sessions', [NetworkController::class, 'sessions']);
+            Route::post('/routers/{router}/sessions/disconnect', [NetworkController::class, 'disconnect']);
+        });
         Route::middleware('permission:reports.view')->prefix('reports')->group(function () { Route::get('/finance/summary', [FinanceReportController::class, 'summary']); Route::get('/finance/revenue', [FinanceReportController::class, 'revenue']); });
     });
 });
