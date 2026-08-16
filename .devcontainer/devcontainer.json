@@ -1,0 +1,22 @@
+{
+  "name": "Stellar Technologies",
+  "image": "mcr.microsoft.com/devcontainers/php:1-8.3-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {"version": "22"},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client",
+        "xdebug.php-debug",
+        "DEVSENSE.phptools-vscode",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+  "forwardPorts": [3306, 6379, 8000, 5173],
+  "postCreateCommand": "cd backend && composer install --no-interaction && php artisan key:generate",
+  "remoteUser": "vscode"
+}
