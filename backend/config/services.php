@@ -8,5 +8,6 @@ return [
         'shortcode' => env('MPESA_SHORTCODE'),
         'passkey' => env('MPESA_PASSKEY'),
         'callback_url' => env('MPESA_CALLBACK_URL'),
+        'transaction_type' => env('MPESA_TRANSACTION_TYPE', 'CustomerPayBillOnline'),
     ],
 ];
