@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\FinanceReportController;
 use App\Http\Controllers\Api\V1\PackageController;
+use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PaymentSettlementController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,11 +28,16 @@ Route::prefix('v1')->group(function () {
         Route::middleware('permission:customers.manage')->apiResource('customers', CustomerController::class)->except(['create', 'edit']);
         Route::middleware('permission:packages.manage')->apiResource('packages', PackageController::class)->except(['create', 'edit']);
 
+        Route::middleware('permission:payments.manage')->group(function () {
+            Route::get('/payments', [PaymentController::class, 'index']);
+            Route::post('/payments', [PaymentController::class, 'store']);
+            Route::post('/payments/{payment}/allocate', [PaymentController::class, 'allocate']);
+            Route::post('/payments/{payment}/settle', [PaymentSettlementController::class, 'settle']);
+        });
+
         Route::middleware('permission:reports.view')->prefix('reports')->group(function () {
             Route::get('/finance/summary', [FinanceReportController::class, 'summary']);
             Route::get('/finance/revenue', [FinanceReportController::class, 'revenue']);
         });
-
-        Route::middleware('permission:payments.manage')->post('/payments/{payment}/settle', [PaymentSettlementController::class, 'settle']);
     });
 });
