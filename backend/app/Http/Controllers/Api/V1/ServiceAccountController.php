@@ -3,6 +3,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\ServiceAccount;
+use App\Models\Subscription;
+use App\Services\Network\RadiusProvisioningService;
 use App\Services\Network\ServiceAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,14 +20,16 @@ class ServiceAccountController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $data=$request->validate([
-            'customer_id'=>['required','integer','exists:customers,id'], 'subscription_id'=>['nullable','integer','exists:subscriptions,id'],
-            'router_id'=>['nullable','integer','exists:routers,id'], 'username'=>['required','string','max:120','unique:service_accounts,username'],
-            'password'=>['required','string','min:10','max:128'], 'access_type'=>['required','in:pppoe,hotspot,static'],
-            'mac_address'=>['nullable','string','max:32'], 'ip_address'=>['nullable','ip'],
-        ]);
+        $data=$request->validate(['customer_id'=>['required','integer','exists:customers,id'],'subscription_id'=>['nullable','integer','exists:subscriptions,id'],'router_id'=>['nullable','integer','exists:routers,id'],'username'=>['required','string','max:120','unique:service_accounts,username'],'password'=>['required','string','min:10','max:128'],'access_type'=>['required','in:pppoe,hotspot,static'],'mac_address'=>['nullable','string','max:32'],'ip_address'=>['nullable','ip']]);
         $data['password_hash']=$data['password']; unset($data['password']);
         return response()->json(['data'=>ServiceAccount::create($data)->load(['customer','router'])],201);
+    }
+
+    public function provision(Subscription $subscription, Request $request, RadiusProvisioningService $provisioner): JsonResponse
+    {
+        $data=$request->validate(['router_id'=>['required','integer','exists:routers,id']]);
+        $account=$provisioner->provision($subscription,$data['router_id']);
+        return response()->json(['message'=>'Service provisioned to MikroTik.','data'=>$account->load(['customer','subscription','router'])],201);
     }
 
     public function suspend(ServiceAccount $serviceAccount, ServiceAccessService $access): JsonResponse { return response()->json(['data'=>$access->suspend($serviceAccount)]); }
