@@ -8,12 +8,6 @@ Artisan::command('isp:about', function () {
     $this->line('Billing, payments and network service lifecycle automation is installed.');
 });
 
-Schedule::command('billing:generate-invoices')
-    ->dailyAt('00:05')
-    ->withoutOverlapping()
-    ->onOneServer();
-
-Schedule::command('billing:enforce-lifecycle --grace=3')
-    ->dailyAt('00:20')
-    ->withoutOverlapping()
-    ->onOneServer();
+Schedule::command('billing:generate-invoices')->dailyAt('00:05')->withoutOverlapping()->onOneServer();
+Schedule::command('billing:enforce-lifecycle --grace=3')->dailyAt('00:20')->withoutOverlapping()->onOneServer();
+Schedule::command('billing:restore-services')->dailyAt('00:35')->withoutOverlapping()->onOneServer();
