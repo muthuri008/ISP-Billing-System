@@ -22,4 +22,5 @@ class Invoice extends Model
     public function customer(): BelongsTo { return $this->belongsTo(Customer::class); }
     public function subscription(): BelongsTo { return $this->belongsTo(Subscription::class); }
     public function items(): HasMany { return $this->hasMany(InvoiceItem::class); }
+    public function allocations(): HasMany { return $this->hasMany(PaymentAllocation::class); }
 }
