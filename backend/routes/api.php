@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\FinanceReportController;
 use App\Http\Controllers\Api\V1\PackageController;
+use App\Http\Controllers\Api\V1\PaymentSettlementController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -30,5 +31,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/finance/summary', [FinanceReportController::class, 'summary']);
             Route::get('/finance/revenue', [FinanceReportController::class, 'revenue']);
         });
+
+        Route::middleware('permission:payments.manage')->post('/payments/{payment}/settle', [PaymentSettlementController::class, 'settle']);
     });
 });
