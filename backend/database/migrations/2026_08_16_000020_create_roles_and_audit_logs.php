@@ -1,4 +1,28 @@
 <?php
-use Illuminate\Database\Migrations\Migration; use Illuminate\Database\Schema\Blueprint; use Illuminate\Support\Facades\Schema;
-return new class extends Migration { public function up():void { Schema::create('roles',function(Blueprint $t){$t->id();$t->string('name',50)->unique();$t->string('display_name',100);$t->timestamps();}); Schema::create('permissions',function(Blueprint $t){$t->id();$t->string('name',100)->unique();$t->string('display_name',150);$t->timestamps();}); Schema::create('role_user',function(Blueprint $t){$t->foreignId('role_id')->constrained()->cascadeOnDelete();$t->foreignId('user_id')->constrained()->cascadeOnDelete();$t->primary(['role_id','user_id']);}); Schema::create('permission_role',function(Blueprint $t){$t->foreignId('permission_id')->constrained()->cascadeOnDelete();$t->foreignId('role_id')->constrained()->cascadeOnDelete();$t->primary(['permission_id','role_id']);}); Schema::create('audit_logs',function(Blueprint $t){$t->id();$t->foreignId('user_id')->nullable()->constrained()->nullOnDelete();$t->string('action',100);$t->string('auditable_type',150)->nullable();$t->unsignedBigInteger('auditable_id')->nullable();$t->ipAddress('ip_address')->nullable();$t->text('user_agent')->nullable();$t->json('metadata')->nullable();$t->timestamps();$t->index(['auditable_type','auditable_id']);}); }
-public function down():void {Schema::dropIfExists('audit_logs');Schema::dropIfExists('permission_role');Schema::dropIfExists('role_user');Schema::dropIfExists('permissions');Schema::dropIfExists('roles');}};
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void
+    {
+        Schema::create('audit_logs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('action', 100);
+            $table->string('auditable_type', 150)->nullable();
+            $table->unsignedBigInteger('auditable_id')->nullable();
+            $table->ipAddress('ip_address')->nullable();
+            $table->text('user_agent')->nullable();
+            $table->json('metadata')->nullable();
+            $table->timestamps();
+            $table->index(['auditable_type', 'auditable_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('audit_logs');
+    }
+};
