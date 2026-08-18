@@ -32,6 +32,9 @@ return new class extends Migration {
             $table->enum('status', ['active', 'suspended', 'disabled'])->default('active')->index();
             $table->string('mac_address', 32)->nullable();
             $table->ipAddress('ip_address')->nullable();
+            $table->string('radius_profile')->nullable();
+            $table->timestamp('last_provisioned_at')->nullable();
+            $table->json('provisioning_metadata')->nullable();
             $table->timestamps();
         });
 
