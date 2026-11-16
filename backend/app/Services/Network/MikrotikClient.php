@@ -1,8 +1,8 @@
 <?php
 
-namespace App\\Services\\Network;
+namespace App\Services\Network;
 
-use App\\Models\\Router;
+use App\Models\Router;
 
 class MikrotikClient
 {
