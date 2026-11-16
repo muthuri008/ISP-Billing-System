@@ -1,9 +1,9 @@
 <?php
 
-namespace App\\Services\\Network;
+namespace App\Services\Network;
 
-use App\\Models\\Router;
-use Illuminate\\Support\\Facades\\Http;
+use App\Models\Router;
+use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 class RouterClient
@@ -18,7 +18,7 @@ class RouterClient
                 $this->router->update(['last_seen_at' => now(), 'status' => 'active']);
                 return true;
             }
-        } catch (\\Throwable) {
+        } catch (\Throwable) {
             // Health checks report the router as unavailable without leaking credentials.
         }
 
