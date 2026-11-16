@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { api, setToken } from './api';
 
-type LoginResponse = { token: string };
+type LoginResponse = { token: string; user?: unknown };
 
 export default function Login({ onLogin }: { onLogin: () => void }) {
   const [email, setEmail] = useState('');
@@ -14,15 +14,18 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
     setError('');
     setBusy(true);
     try {
-      const result = await api<LoginResponse>('/auth/login', {
+      const response = await api<{ data: LoginResponse }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
-      if (!result?.token) throw new Error('The API did not return an access token.');
-      setToken(result.token);
+      if (!response.data?.token) throw new Error('The API did not return an access token.');
+      setToken(response.data.token);
       onLogin();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Login failed. Check your credentials.');
+      const errorMessage = e && typeof e === 'object' && 'response' in e
+        ? (e as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined;
+      setError(errorMessage ?? (e instanceof Error ? e.message : 'Login failed. Check your credentials.'));
     } finally {
       setBusy(false);
     }
