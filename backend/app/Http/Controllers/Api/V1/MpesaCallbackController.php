@@ -1,11 +1,11 @@
 <?php
 
-namespace App\\Http\\Controllers\\Api\\V1;
+namespace App\Http\Controllers\Api\V1;
 
-use App\\Http\\Controllers\\Controller;
-use App\\Services\\Payments\\MpesaPaymentService;
-use Illuminate\\Http\\JsonResponse;
-use Illuminate\\Http\\Request;
+use App\Http\Controllers\Controller;
+use App\Services\Payments\MpesaPaymentService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class MpesaCallbackController extends Controller
 {
