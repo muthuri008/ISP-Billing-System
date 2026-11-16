@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->string('name', 120);
             $table->string('hostname', 255);
             $table->unsignedSmallInteger('api_port')->default(8728);
-            $table->string('radius_secret')->nullable();
+            $table->text('radius_secret')->nullable();
             $table->string('api_username')->nullable();
             $table->text('api_password')->nullable();
             $table->enum('status', ['active', 'inactive', 'maintenance'])->default('active')->index();

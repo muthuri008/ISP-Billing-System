@@ -60,7 +60,7 @@ class InvoiceGenerationService
                 'unit_price' => $amount,
                 'discount_amount' => 0,
                 'tax_amount' => 0,
-                'total_amount' => $amount,
+                'line_total' => $amount,
             ]);
 
             $subscription->update(['next_billing_at' => $periodEnd->copy()->addDay()]);

@@ -3,13 +3,14 @@ services:
     image: mysql:8.4
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-    volumes: [mysql_data:/var/lib/mysql]
+      MYSQL_DATABASE: ${DB_DATABASE:?Set DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME:?Set DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD","mysqladmin","ping","-h","localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -17,28 +18,111 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    volumes: [redis_data:/data]
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
     healthcheck:
-      test: ["CMD","redis-cli","ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 10
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      target: app
     restart: unless-stopped
     env_file: ./backend/.env
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
     depends_on:
-      mysql: {condition: service_healthy}
-      redis: {condition: service_healthy}
-    command: sh -c "php artisan migrate --force && php artisan optimize && php artisan serve --host=0.0.0.0 --port=8000"
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - backend_storage:/var/www/html/storage
+    healthcheck:
+      test: ["CMD-SHELL", "php -r '$$s=@fsockopen(\"127.0.0.1\",9000); exit($$s ? 0 : 1);'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  backend-web:
+    build:
+      context: ./backend
+      target: web
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - backend_storage:/var/www/html/storage:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8080/up"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    build:
+      context: ./backend
+      target: app
+    env_file: ./backend/.env
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+    command: ["php", "artisan", "migrate", "--force"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles: ["deploy"]
+
+  queue:
+    build:
+      context: ./backend
+      target: app
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--timeout=90"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - backend_storage:/var/www/html/storage
+
+  scheduler:
+    build:
+      context: ./backend
+      target: app
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+    command: ["php", "artisan", "schedule:work"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - backend_storage:/var/www/html/storage
 
   frontend:
     build: ./frontend
     restart: unless-stopped
-    ports: ["80:80"]
-    depends_on: [backend]
+    ports:
+      - "80:80"
+    depends_on:
+      backend-web:
+        condition: service_healthy
 
 volumes:
   mysql_data:
   redis_data:
+  backend_storage:

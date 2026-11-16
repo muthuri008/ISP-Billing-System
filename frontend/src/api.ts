@@ -5,10 +5,8 @@ export type ApiRequestOptions = Omit<AxiosRequestConfig, 'data' | 'method'> & {
   body?: unknown;
 };
 
-type UnwrapApiResult<T> = T extends { data: infer D } ? D : T;
-
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost/api/v1',
+  baseURL: import.meta.env.VITE_API_URL ?? '/api/v1',
   headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 });
 
@@ -20,10 +18,13 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
+// Keep the Laravel response envelope intact. Screens consume response.data
+// explicitly, so unwrapping it here caused arrays and payload objects to be
+// typed and read inconsistently across the application.
 export async function api<T = unknown>(
   url: string,
   options: ApiRequestOptions = {},
-): Promise<UnwrapApiResult<T>> {
+): Promise<T> {
   const { body, ...config } = options;
   const response = await client.request<T>({
     url,
@@ -31,12 +32,7 @@ export async function api<T = unknown>(
     data: body,
   });
 
-  const payload = response.data as T;
-  if (payload && typeof payload === 'object' && 'data' in payload) {
-    return (payload as { data: unknown }).data as UnwrapApiResult<T>;
-  }
-
-  return payload as UnwrapApiResult<T>;
+  return response.data;
 }
 
 export function setToken(token: string) {

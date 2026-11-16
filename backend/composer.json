@@ -23,7 +23,8 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Tests\\": "tests/"
+      "Tests\\": "tests/",
+      "Database\\Factories\\": "database/factories/"
     }
   },
   "scripts": {
@@ -31,5 +32,10 @@
     "lint": "./vendor/bin/pint --test"
   },
   "minimum-stability": "stable",
-  "prefer-stable": true
+  "prefer-stable": true,
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  }
 }
