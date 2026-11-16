@@ -14,7 +14,7 @@ class RouterController extends Controller
     {
         $rules = [
             'name' => [$creating ? 'required' : 'sometimes', 'string', 'max:120'],
-            'hostname' => [$creating ? 'required' : 'sometimes', 'string', 'max:255'],
+            'hostname' => [$creating ? 'required' : 'sometimes', 'string', 'max:255', 'regex:/^[A-Za-z0-9.-]+$/'],
             'rest_scheme' => [$creating ? 'required' : 'sometimes', Rule::in(app()->environment('production') ? ['https'] : ['https', 'http'])],
             'rest_port' => [$creating ? 'required' : 'sometimes', 'integer', 'between:1,65535'],
             'api_port' => ['sometimes', 'integer', 'between:1,65535'],
