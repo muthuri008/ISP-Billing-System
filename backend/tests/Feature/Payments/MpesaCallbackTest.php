@@ -36,6 +36,7 @@ class MpesaCallbackTest extends TestCase
                         'Item' => [
                             ['Name' => 'Amount', 'Value' => 1500],
                             ['Name' => 'MpesaReceiptNumber', 'Value' => 'QAB123XYZ'],
+                            ['Name' => 'PhoneNumber', 'Value' => 254712345678],
                         ],
                     ],
                 ],
@@ -56,7 +57,7 @@ class MpesaCallbackTest extends TestCase
             'currency' => 'KES',
             'external_reference' => 'ws_CO_test_checkout',
             'status' => 'pending',
-            'metadata' => [],
+            'metadata' => ['phone' => '254712345678'],
         ]);
 
         $this->mock(MpesaGateway::class)
