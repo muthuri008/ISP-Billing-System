@@ -2,6 +2,7 @@
 
 namespace App\Services\Payments;
 
+use App\Models\Invoice;
 use App\Models\Payment;
 use App\Services\Billing\InvoiceSettlementService;
 use Illuminate\Support\Facades\DB;
@@ -143,6 +144,17 @@ class MpesaPaymentService
                 'paid_at' => now(),
                 'metadata' => array_merge($payment->metadata ?? [], ['callback' => $payload]),
             ]);
+
+            $invoiceId = data_get($payment->metadata, 'invoice_id');
+            if ($invoiceId) {
+                $invoice = Invoice::query()
+                    ->where('customer_id', $payment->customer_id)
+                    ->findOrFail($invoiceId);
+
+                $this->settlements->allocate($payment, $invoice);
+
+                return $payment->fresh('allocations.invoice');
+            }
 
             return $this->settlements->settlePayment($payment);
         });
