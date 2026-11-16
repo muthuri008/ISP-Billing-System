@@ -92,6 +92,15 @@ class MpesaPaymentService
                 throw new RuntimeException('M-Pesa callback is missing a valid ResultCode.');
             }
 
+            // Daraja callbacks are not cryptographically signed. Confirm the checkout
+            // request directly with Safaricom before changing a payment's financial state.
+            $verification = $this->gateway->queryStkPush($checkoutId);
+            $verifiedResultCode = data_get($verification, 'ResultCode');
+
+            if (! is_numeric($verifiedResultCode) || (int) $verifiedResultCode !== (int) $resultCode) {
+                throw new RuntimeException('Safaricom transaction query did not confirm the callback result.');
+            }
+
             if ((int) $resultCode !== 0) {
                 $payment->update([
                     'status' => 'failed',
@@ -99,13 +108,6 @@ class MpesaPaymentService
                 ]);
 
                 return $payment->fresh();
-            }
-
-            // Daraja callbacks are not cryptographically signed. Confirm the checkout
-            // request directly with Safaricom before recording money as received.
-            $verification = $this->gateway->queryStkPush($checkoutId);
-            if ((int) data_get($verification, 'ResultCode', -1) !== 0) {
-                throw new RuntimeException('Safaricom transaction query did not confirm successful payment.');
             }
 
             $items = collect(data_get($callback, 'CallbackMetadata.Item', []))->keyBy('Name');
