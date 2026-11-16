@@ -17,6 +17,7 @@ it('generates one invoice for an active subscription and advances billing', func
         'customer_id' => $customer->id,
         'package_id' => $package->id,
         'status' => 'active',
+        'starts_at' => '2026-08-16',
         'auto_renew' => true,
         'recurring_price' => 2500,
         'currency' => 'KES',
