@@ -39,7 +39,7 @@ class InvoiceSettlementService
             $invoice->update([
                 'amount_paid' => $newPaid,
                 'amount_due' => max(0, (float) $invoice->total_amount - $newPaid),
-                'status' => $newPaid >= (float) $invoice->total_amount ? 'paid' : 'partial',
+                'status' => $newPaid >= (float) $invoice->total_amount ? 'paid' : 'partially_paid',
             ]);
 
             return $record;
