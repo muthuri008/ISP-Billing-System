@@ -1,10 +1,10 @@
 <?php
 
-namespace App\\Services\\Payments;
+namespace App\Services\Payments;
 
-use App\\Models\\Payment;
-use App\\Services\\Billing\\InvoiceSettlementService;
-use Illuminate\\Support\\Facades\\DB;
+use App\Models\Payment;
+use App\Services\Billing\InvoiceSettlementService;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class MpesaPaymentService
@@ -14,7 +14,7 @@ class MpesaPaymentService
         private readonly InvoiceSettlementService $settlements,
     ) {}
 
-    public function initiateInvoiceStkPush(\\App\\Models\\Invoice $invoice, string $phone): array
+    public function initiateInvoiceStkPush(\App\Models\Invoice $invoice, string $phone): array
     {
         if ((float) $invoice->amount_due <= 0 || $invoice->status === 'paid') {
             throw new RuntimeException('Invoice has no outstanding balance.');
