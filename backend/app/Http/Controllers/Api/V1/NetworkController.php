@@ -18,8 +18,8 @@ class NetworkController extends Controller
 
     public function health(Router $router, RouterHealthService $health): JsonResponse
     {
-        $online = $health->check($router);
-        return response()->json(['online' => $online, 'router' => $router->fresh()]);
+        $result = $health->check($router);
+        return response()->json(['online' => $result['online'], 'identity' => $result['identity'], 'router' => $router->fresh()]);
     }
 
     public function sessions(Router $router, SessionService $sessions): JsonResponse
