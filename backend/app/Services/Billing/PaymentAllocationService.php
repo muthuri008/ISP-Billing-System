@@ -12,6 +12,8 @@ class PaymentAllocationService
     public function allocate(Payment $payment, ?Invoice $invoice=null): float
     {
         return DB::transaction(function() use ($payment,$invoice) {
+            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
+            if ($payment->status !== 'completed') throw new RuntimeException('Only completed payments can be allocated.');
             $remaining=(float)$payment->amount-(float)$payment->allocations()->sum('amount');
             if($remaining<=0)return 0.0;
             $query=Invoice::query()->where('customer_id',$payment->customer_id)->whereIn('status',['issued','partially_paid','overdue'])->where('amount_due','>',0)->orderBy('due_date')->lockForUpdate();
@@ -28,7 +30,6 @@ class PaymentAllocationService
                 $allocated+=$amount;$remaining-=$amount;
                 if($remaining<=0)break;
             }
-            if($allocated>0 && $payment->status!=='completed'){$payment->update(['status'=>'completed','paid_at'=>$payment->paid_at??now()]);}
             return $allocated;
         });
     }
