@@ -21,7 +21,7 @@ export default function App() {
   const [active, setActive] = useState('Dashboard');
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost/api/v1'}/health`)
+    fetch(`${import.meta.env.VITE_API_URL ?? '/api/v1'}/health`)
       .then(response => {
         if (!response.ok) throw new Error('API unavailable');
         setStatus('online');
