@@ -37,6 +37,7 @@ class MpesaCallbackTest extends TestCase
                             ['Name' => 'Amount', 'Value' => 1500],
                             ['Name' => 'MpesaReceiptNumber', 'Value' => 'QAB123XYZ'],
                             ['Name' => 'PhoneNumber', 'Value' => 254712345678],
+                            ['Name' => 'PhoneNumber', 'Value' => 254712345678],
                         ],
                     ],
                 ],
@@ -80,6 +81,7 @@ class MpesaCallbackTest extends TestCase
                         'Item' => [
                             ['Name' => 'Amount', 'Value' => 1500],
                             ['Name' => 'MpesaReceiptNumber', 'Value' => 'QAB123XYZ'],
+                            ['Name' => 'PhoneNumber', 'Value' => 254712345678],
                         ],
                     ],
                 ],
