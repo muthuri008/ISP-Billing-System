@@ -47,7 +47,7 @@ class InvoiceGenerationService
                 'subtotal' => $amount,
                 'discount_amount' => 0,
                 'tax_amount' => 0,
-                'total_amount' => $amount,
+                'line_total' => $amount,
                 'amount_paid' => 0,
                 'amount_due' => $amount,
                 'currency' => $subscription->currency ?: $subscription->package->currency,
