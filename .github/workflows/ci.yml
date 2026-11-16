@@ -34,6 +34,8 @@ jobs:
         run: composer install --no-interaction --prefer-dist --no-progress
       - name: Validate Composer configuration
         run: composer validate --strict
+      - name: Prepare Laravel writable directories
+        run: mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
       - name: Run backend tests
         run: php artisan test
 
