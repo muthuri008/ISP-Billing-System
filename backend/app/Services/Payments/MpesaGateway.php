@@ -1,8 +1,8 @@
 <?php
 
-namespace App\\Services\\Payments;
+namespace App\Services\Payments;
 
-use Illuminate\\Support\\Facades\\Http;
+use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 class MpesaGateway
@@ -115,17 +115,17 @@ class MpesaGateway
 
     private function normalizeKenyanPhone(string $phone): string
     {
-        $phone = preg_replace('/^\\+/', '', trim($phone)) ?? '';
+        $phone = preg_replace('/^\+/', '', trim($phone)) ?? '';
 
-        if (preg_match('/^0([17]\\d{8})$/', $phone, $matches)) {
+        if (preg_match('/^0([17]\d{8})$/', $phone, $matches)) {
             return '254'.$matches[1];
         }
 
-        if (preg_match('/^([17]\\d{8})$/', $phone, $matches)) {
+        if (preg_match('/^([17]\d{8})$/', $phone, $matches)) {
             return '254'.$matches[1];
         }
 
-        if (preg_match('/^254[17]\\d{8}$/', $phone)) {
+        if (preg_match('/^254[17]\d{8}$/', $phone)) {
             return $phone;
         }
 
