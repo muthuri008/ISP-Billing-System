@@ -116,7 +116,7 @@ class MpesaPaymentService
 
             $receiptAlreadyUsed = Payment::query()
                 ->where('transaction_reference', $receipt)
-                ->whereKeyNot($payment->getKey())
+                ->where('id', '!=', $payment->getKey())
                 ->exists();
 
             if ($receiptAlreadyUsed) {
