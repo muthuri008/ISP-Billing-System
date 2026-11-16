@@ -32,6 +32,12 @@ jobs:
           coverage: none
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Upload resolved Composer lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: composer-lockfile
+          path: backend/composer.lock
+          if-no-files-found: error
       - name: Validate Composer configuration
         run: composer validate --strict
       - name: Prepare Laravel environment and writable directories
@@ -53,5 +59,11 @@ jobs:
           node-version: '22'
       - name: Install frontend dependencies
         run: npm install --no-audit --no-fund
+      - name: Upload resolved npm lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-lockfile
+          path: frontend/package-lock.json
+          if-no-files-found: error
       - name: Build frontend
         run: npm run build
