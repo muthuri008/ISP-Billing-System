@@ -9,6 +9,8 @@
 5. Set the production M-Pesa Daraja credentials and HTTPS callback URL through the deployment secret manager. Never commit secrets.
 6. Restrict database, Redis, PHP-FPM and backend-web ports to the private Docker network. Only the TLS entry point should be public.
 
+Dependency lockfiles are maintained as part of the CI stabilisation workflow. Production builds must use the committed `composer.lock` and `package-lock.json`; do not run dependency updates directly on the production server.
+
 ## First deployment / migrations
 
 Build the images and run migrations as an explicit release step:
