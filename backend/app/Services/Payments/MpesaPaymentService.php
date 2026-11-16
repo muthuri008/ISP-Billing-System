@@ -101,6 +101,13 @@ class MpesaPaymentService
                 return $payment->fresh();
             }
 
+            // Daraja callbacks are not cryptographically signed. Confirm the checkout
+            // request directly with Safaricom before recording money as received.
+            $verification = $this->gateway->queryStkPush($checkoutId);
+            if ((int) data_get($verification, 'ResultCode', -1) !== 0) {
+                throw new RuntimeException('Safaricom transaction query did not confirm successful payment.');
+            }
+
             $items = collect(data_get($callback, 'CallbackMetadata.Item', []))->keyBy('Name');
             $receipt = data_get($items->get('MpesaReceiptNumber'), 'Value');
             $callbackAmount = data_get($items->get('Amount'), 'Value');
