@@ -20,6 +20,10 @@ class MpesaPaymentService
             throw new RuntimeException('Invoice has no outstanding balance.');
         }
 
+        if (abs((float) $invoice->amount_due - round((float) $invoice->amount_due)) > 0.0001) {
+            throw new RuntimeException('M-Pesa STK Push supports whole KES amounts only. Contact support to arrange payment for this invoice.');
+        }
+
         return DB::transaction(function () use ($invoice, $phone) {
             $payment = Payment::create([
                 'payment_number' => 'PAY-'.now()->format('YmdHis').'-'.str()->upper(str()->random(6)),
