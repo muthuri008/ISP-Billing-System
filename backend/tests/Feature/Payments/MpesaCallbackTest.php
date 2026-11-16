@@ -1,13 +1,13 @@
 <?php
 
-namespace Tests\\Feature\\Payments;
+namespace Tests\Feature\Payments;
 
-use App\\Models\\Customer;
-use App\\Models\\Payment;
-use App\\Services\\Billing\\InvoiceSettlementService;
-use App\\Services\\Payments\\MpesaGateway;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Tests\\TestCase;
+use App\Models\Customer;
+use App\Models\Payment;
+use App\Services\Billing\InvoiceSettlementService;
+use App\Services\Payments\MpesaGateway;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class MpesaCallbackTest extends TestCase
 {
