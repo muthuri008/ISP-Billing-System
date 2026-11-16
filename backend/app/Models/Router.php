@@ -7,6 +7,8 @@ use Illuminate\\Database\\Eloquent\\Relations\\HasMany;
 
 class Router extends Model
 {
+    protected $hidden = ['api_password', 'radius_secret'];
+
     protected $fillable = [
         'name',
         'hostname',
