@@ -30,14 +30,8 @@ jobs:
           php-version: '8.3'
           extensions: mbstring, pdo, pdo_sqlite
           coverage: none
-      - name: Install dependencies
+      - name: Install locked backend dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
-      - name: Upload resolved Composer lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: composer-lockfile
-          path: backend/composer.lock
-          if-no-files-found: error
       - name: Validate Composer configuration
         run: composer validate --strict
       - name: Prepare Laravel environment and writable directories
@@ -57,13 +51,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install frontend dependencies
-        run: npm install --no-audit --no-fund
-      - name: Upload resolved npm lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: npm-lockfile
-          path: frontend/package-lock.json
-          if-no-files-found: error
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked frontend dependencies
+        run: npm ci --no-audit --no-fund
       - name: Build frontend
         run: npm run build
