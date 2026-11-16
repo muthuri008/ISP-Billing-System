@@ -58,11 +58,6 @@ class MpesaPaymentService
         });
     }
 
-    public function initiateStkPush(string $phone, float $amount, string $accountReference, string $description): array
-    {
-        return $this->gateway->stkPush($phone, $amount, $accountReference, $description);
-    }
-
     public function recordCallback(array $payload): ?Payment
     {
         $callback = data_get($payload, 'Body.stkCallback');
