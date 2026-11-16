@@ -12,8 +12,8 @@ export default function NetworkPage() {
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
-    const result = await api<Router[]>('/network/routers');
-    setRouters(Array.isArray(result) ? result : []);
+    const response = await api<{data:Router[]}>('/network/routers');
+    setRouters(Array.isArray(response.data) ? response.data : []);
   };
 
   useEffect(() => {
@@ -34,8 +34,8 @@ export default function NetworkPage() {
     setSelected(router.id);
     setBusy(true);
     try {
-      const result = await api<Session[]>(`/network/routers/${router.id}/sessions`);
-      setSessions(Array.isArray(result) ? result : []);
+      const response = await api<{data:Session[]}>(`/network/routers/${router.id}/sessions`);
+      setSessions(Array.isArray(response.data) ? response.data : []);
       setMessage('');
     } catch {
       setSessions([]);
