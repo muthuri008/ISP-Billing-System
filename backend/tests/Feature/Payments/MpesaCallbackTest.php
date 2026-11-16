@@ -5,6 +5,7 @@ namespace Tests\\Feature\\Payments;
 use App\\Models\\Customer;
 use App\\Models\\Payment;
 use App\\Services\\Billing\\InvoiceSettlementService;
+use App\\Services\\Payments\\MpesaGateway;
 use Illuminate\\Foundation\\Testing\\RefreshDatabase;
 use Tests\\TestCase;
 
@@ -57,6 +58,12 @@ class MpesaCallbackTest extends TestCase
             'status' => 'pending',
             'metadata' => ['invoice_id' => 1],
         ]);
+
+        $this->mock(MpesaGateway::class)
+            ->shouldReceive('queryStkPush')
+            ->once()
+            ->with('ws_CO_test_checkout')
+            ->andReturn(['ResultCode' => 0]);
 
         $this->mock(InvoiceSettlementService::class)
             ->shouldReceive('settlePayment')
