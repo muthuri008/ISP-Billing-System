@@ -4,10 +4,11 @@
 
 1. Provision a supported Linux VPS and point the production DNS name to it.
 2. Copy the root `.env.example` to `.env` for Docker Compose's database variable interpolation. Use unique, long random database credentials.
-3. Copy `backend/.env.example` to `backend/.env`. Set a unique `APP_KEY`, `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` to the public HTTPS URL, and make its DB credentials match the root `.env` values.
-4. Configure an external TLS reverse proxy (for example, Caddy or a managed load balancer) in front of the frontend service. Do not expose the application over plain HTTP to the public internet.
-5. Set the production M-Pesa Daraja credentials and HTTPS callback URL through the deployment secret manager. Never commit secrets.
-6. Restrict database, Redis, PHP-FPM and backend-web ports to the private Docker network. Only the TLS entry point should be public.
+3. Copy `backend/.env.example` to `backend/.env`. Set a unique `APP_KEY`, `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` to the public HTTPS API URL, `CORS_ALLOWED_ORIGINS` to the exact frontend origin, and make its DB credentials match the root `.env` values.
+4. If the frontend is hosted separately on Vercel, set its build variable `VITE_API_URL` to the API base URL ending in `/api/v1` (for example, `https://api.example.com/api/v1`). Do not use a wildcard CORS origin in production.
+5. Configure an external TLS reverse proxy (for example, Caddy or a managed load balancer) in front of the frontend service. Do not expose the application over plain HTTP to the public internet.
+6. Set the production M-Pesa Daraja credentials and HTTPS callback URL through the deployment secret manager. Never commit secrets.
+7. Restrict database, Redis, PHP-FPM and backend-web ports to the private Docker network. Only the TLS entry point should be public.
 
 Committed `backend/composer.lock` and `frontend/package-lock.json` make dependency installation reproducible. CI and production Docker builds use these lockfiles; do not run dependency updates directly on the production server.
 
