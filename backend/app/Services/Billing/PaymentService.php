@@ -30,7 +30,8 @@ class PaymentService
     public function allocate(Payment $payment, Invoice $invoice, float $amount): Payment
     {
         return DB::transaction(function () use ($payment, $invoice, $amount) {
-            $payment->refresh(); $invoice->refresh();
+            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
+            $invoice = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
             if ($payment->status !== 'completed') throw ValidationException::withMessages(['payment' => ['Only completed payments can be allocated.']]);
             if ($payment->customer_id !== $invoice->customer_id) throw ValidationException::withMessages(['invoice' => ['Payment and invoice belong to different customers.']]);
             if ($amount <= 0 || $amount > (float) $invoice->amount_due) throw ValidationException::withMessages(['amount' => ['Invalid invoice allocation amount.']]);
@@ -39,7 +40,7 @@ class PaymentService
             $payment->allocations()->create(['invoice_id' => $invoice->id, 'amount' => $amount]);
             $newPaid = (float) $invoice->amount_paid + $amount;
             $newDue = max(0, (float) $invoice->total_amount - $newPaid);
-            $invoice->update(['amount_paid' => $newPaid, 'amount_due' => $newDue, 'status' => $newDue <= 0 ? 'paid' : 'partial']);
+            $invoice->update(['amount_paid' => $newPaid, 'amount_due' => $newDue, 'status' => $newDue <= 0 ? 'paid' : 'partially_paid']);
 
             if ($newDue <= 0) {
                 $invoice->loadMissing('customer.serviceAccounts');
