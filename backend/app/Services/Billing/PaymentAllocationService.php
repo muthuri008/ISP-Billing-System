@@ -14,7 +14,7 @@ class PaymentAllocationService
         return DB::transaction(function() use ($payment,$invoice) {
             $remaining=(float)$payment->amount-(float)$payment->allocations()->sum('amount');
             if($remaining<=0)return 0.0;
-            $query=Invoice::query()->where('customer_id',$payment->customer_id)->whereIn('status',['issued','partial','overdue','suspended'])->where('amount_due','>',0)->orderBy('due_date')->lockForUpdate();
+            $query=Invoice::query()->where('customer_id',$payment->customer_id)->whereIn('status',['issued','partially_paid','overdue'])->where('amount_due','>',0)->orderBy('due_date')->lockForUpdate();
             if($invoice)$query->whereKey($invoice->id);
             $allocated=0.0;
             foreach($query->get() as $target){
@@ -23,7 +23,7 @@ class PaymentAllocationService
                 PaymentAllocation::create(['payment_id'=>$payment->id,'invoice_id'=>$target->id,'amount'=>$amount]);
                 $target->amount_paid=(float)$target->amount_paid+$amount;
                 $target->amount_due=max(0,(float)$target->total_amount-(float)$target->amount_paid);
-                $target->status=$target->amount_due<=0?'paid':'partial';
+                $target->status=$target->amount_due<=0?'paid':'partially_paid';
                 $target->save();
                 $allocated+=$amount;$remaining-=$amount;
                 if($remaining<=0)break;
