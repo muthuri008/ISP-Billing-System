@@ -80,6 +80,39 @@ class MpesaGateway
         return $result;
     }
 
+    public function queryStkPush(string $checkoutRequestId): array
+    {
+        $token = $this->accessToken();
+        $timestamp = now()->format('YmdHis');
+        $shortcode = config('services.mpesa.shortcode');
+        $passkey = config('services.mpesa.passkey');
+        $base = rtrim((string) config('services.mpesa.base_url'), '/');
+
+        if (! $shortcode || ! $passkey || ! $checkoutRequestId) {
+            throw new RuntimeException('M-Pesa STK query configuration is incomplete.');
+        }
+
+        $payload = [
+            'BusinessShortCode' => $shortcode,
+            'Password' => base64_encode($shortcode.$passkey.$timestamp),
+            'Timestamp' => $timestamp,
+            'CheckoutRequestID' => $checkoutRequestId,
+        ];
+
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->post($base.'/mpesa/stkpushquery/v1/query', $payload);
+
+        $response->throw();
+        $result = $response->json();
+
+        if (! is_array($result) || ! array_key_exists('ResultCode', $result)) {
+            throw new RuntimeException('Safaricom did not return a verifiable STK transaction status.');
+        }
+
+        return $result;
+    }
+
     private function normalizeKenyanPhone(string $phone): string
     {
         $phone = preg_replace('/^\\+/', '', trim($phone)) ?? '';
