@@ -10,6 +10,7 @@ return new class extends Migration {
         Schema::table('routers', function (Blueprint $table) {
             $table->string('rest_scheme', 5)->default('https')->after('hostname');
             $table->unsignedSmallInteger('rest_port')->default(443)->after('rest_scheme');
+            $table->text('radius_secret')->nullable()->change();
         });
     }
 
