@@ -56,7 +56,7 @@ class MpesaCallbackTest extends TestCase
             'currency' => 'KES',
             'external_reference' => 'ws_CO_test_checkout',
             'status' => 'pending',
-            'metadata' => ['invoice_id' => 1],
+            'metadata' => [],
         ]);
 
         $this->mock(MpesaGateway::class)
