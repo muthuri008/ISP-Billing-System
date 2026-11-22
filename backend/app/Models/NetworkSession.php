@@ -9,7 +9,7 @@ class NetworkSession extends Model
 {
     protected $fillable = [
         'service_account_id', 'router_id', 'session_id', 'started_at', 'ended_at',
-        'input_octets', 'output_octets', 'nas_address', 'ip_address', 'status',
+        'input_octets', 'output_octets', 'nas_address', 'ip_address', 'status', 'duration_seconds',
     ];
 
     protected function casts(): array
@@ -19,6 +19,7 @@ class NetworkSession extends Model
             'ended_at' => 'datetime',
             'input_octets' => 'integer',
             'output_octets' => 'integer',
+            'duration_seconds' => 'integer',
         ];
     }
 

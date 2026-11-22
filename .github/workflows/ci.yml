@@ -1,27 +1,46 @@
 name: CI
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
+
 jobs:
   backend:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ":memory:"
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           extensions: mbstring, pdo, pdo_sqlite
-      - name: Install dependencies
+          coverage: none
+      - name: Install locked backend dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
-      - name: Validate composer
+      - name: Validate Composer configuration
         run: composer validate --strict
-      - name: Run tests
+      - name: Prepare Laravel environment and writable directories
+        run: |
+          cp .env.example .env
+          mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+      - name: Run backend tests
         run: php artisan test
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -34,5 +53,20 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm run build
+      - name: Install locked frontend dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Build frontend
+        run: npm run build
+
+  infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare Compose environment files
+        run: |
+          cp .env.example .env
+          cp backend/.env.example backend/.env
+      - name: Validate production Compose configuration
+        run: docker compose -f docker-compose.prod.yml config -q
+      - name: Build production images
+        run: docker compose -f docker-compose.prod.yml build

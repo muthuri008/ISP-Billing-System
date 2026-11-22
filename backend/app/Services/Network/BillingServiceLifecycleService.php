@@ -33,13 +33,30 @@ class BillingServiceLifecycleService
 
     public function restoreAfterBilling(ServiceAccount $account, Invoice $invoice): ?ServiceAccount
     {
-        $metadata = $account->provisioning_metadata ?? [];
-        $reason = $metadata['billing_suspension'] ?? null;
-        if (!$reason || (int)($reason['invoice_id'] ?? 0) !== (int)$invoice->id) {
-            return null;
-        }
+        return DB::transaction(function () use ($account, $invoice) {
+            $account = ServiceAccount::query()->lockForUpdate()->findOrFail($account->id);
+            $metadata = $account->provisioning_metadata ?? [];
+            $reason = $metadata['billing_suspension'] ?? null;
 
-        return DB::transaction(function () use ($account, $metadata, $invoice) {
+            if (! $reason || (int) ($reason['invoice_id'] ?? 0) !== (int) $invoice->id) {
+                return null;
+            }
+
+            // Never restore access while another overdue invoice for this same
+            // subscription remains unpaid.
+            $hasOtherOverdueInvoice = Invoice::query()
+                ->where('customer_id', $account->customer_id)
+                ->where('subscription_id', $account->subscription_id)
+                ->where('id', '!=', $invoice->id)
+                ->whereIn('status', ['issued', 'overdue', 'partially_paid'])
+                ->where('amount_due', '>', 0)
+                ->whereDate('due_date', '<=', now()->toDateString())
+                ->exists();
+
+            if ($hasOtherOverdueInvoice) {
+                return null;
+            }
+
             unset($metadata['billing_suspension']);
             $account->update(['provisioning_metadata' => $metadata]);
             $account = $this->lifecycle->restore($account);
@@ -47,6 +64,7 @@ class BillingServiceLifecycleService
                 'invoice_id' => $invoice->id,
                 'invoice_number' => $invoice->invoice_number,
             ]);
+
             return $account->fresh();
         });
     }

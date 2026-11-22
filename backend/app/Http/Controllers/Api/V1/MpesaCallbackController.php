@@ -3,22 +3,38 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Services\Payments\MpesaCallbackService;
+use App\Services\Payments\MpesaPaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class MpesaCallbackController extends Controller
 {
-    public function __invoke(Request $request, MpesaCallbackService $service): JsonResponse
+    public function __invoke(Request $request, MpesaPaymentService $payments): JsonResponse
     {
-        $data=$request->validate([
-            'transaction_reference'=>['required','string','max:120'],
-            'amount'=>['required','numeric','gt:0'],
-            'customer_id'=>['required','integer','exists:customers,id'],
-            'currency'=>['nullable','string','size:3'],
-            'external_reference'=>['nullable','string','max:120'],
+        // Daraja sends Body.stkCallback. Never accept customer IDs, amounts or
+        // transaction references supplied independently by the callback caller.
+        $checkoutRequestId = data_get($request->all(), 'Body.stkCallback.CheckoutRequestID');
+        $resultCode = data_get($request->all(), 'Body.stkCallback.ResultCode');
+
+        if (! is_string($checkoutRequestId) || $checkoutRequestId === '' || ! is_numeric($resultCode)) {
+            return response()->json([
+                'ResultCode' => 1,
+                'ResultDesc' => 'Invalid callback payload.',
+            ], 422);
+        }
+
+        $payment = $payments->recordCallback($request->all());
+
+        if (! $payment) {
+            return response()->json([
+                'ResultCode' => 1,
+                'ResultDesc' => 'No matching pending STK request was found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'ResultCode' => 0,
+            'ResultDesc' => 'Callback accepted.',
         ]);
-        $result=$service->handle($data);
-        return response()->json(['data'=>$result],$result['duplicate'] ? 200 : 201);
     }
 }

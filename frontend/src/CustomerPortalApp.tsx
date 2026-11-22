@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { api } from './api';
 // @ts-ignore JSX pages are intentionally kept alongside the existing frontend while the portal is migrated incrementally.
 import CustomerLogin from './pages/CustomerLogin';
 // @ts-ignore
@@ -12,7 +13,7 @@ export default function CustomerPortalApp() {
   const [authenticated, setAuthenticated] = useState(Boolean(localStorage.getItem('isp_token')));
   const [page, setPage] = useState('dashboard');
   if (!authenticated) return <CustomerLogin onLogin={() => setAuthenticated(true)} />;
-  function logout() { localStorage.removeItem('isp_token'); setAuthenticated(false); }
+  async function logout() { try { await api('/auth/logout', { method: 'POST' }); } catch { /* Always clear local credentials on logout. */ } finally { localStorage.removeItem('isp_token'); setAuthenticated(false); } }
   return <div className="customer-shell">
     <aside className="customer-sidebar"><div className="brand"><span className="brand-mark">IS</span><div><strong>ISP Billing</strong><small>Customer Portal</small></div></div>
       <nav>

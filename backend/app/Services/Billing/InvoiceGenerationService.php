@@ -15,13 +15,24 @@ class InvoiceGenerationService
         $billingDate ??= now()->startOfDay();
 
         return DB::transaction(function () use ($subscription, $billingDate) {
-            if ($subscription->status !== 'active' || ! $subscription->auto_renew) return null;
-            if ($subscription->starts_at && $subscription->starts_at->startOfDay()->gt($billingDate)) return null;
-            if ($subscription->ends_at && $subscription->ends_at->startOfDay()->lt($billingDate)) return null;
-            if ($subscription->next_billing_at && $subscription->next_billing_at->startOfDay()->gt($billingDate)) return null;
+            $subscription = Subscription::query()->with('package')->lockForUpdate()->findOrFail($subscription->id);
+
+            if ($subscription->status !== 'active' || ! $subscription->auto_renew) {
+                return null;
+            }
+            if ($subscription->starts_at && $subscription->starts_at->startOfDay()->gt($billingDate)) {
+                return null;
+            }
+            if ($subscription->ends_at && $subscription->ends_at->startOfDay()->lt($billingDate)) {
+                return null;
+            }
+            if ($subscription->next_billing_at && $subscription->next_billing_at->startOfDay()->gt($billingDate)) {
+                return null;
+            }
 
             $periodStart = $subscription->next_billing_at?->startOfDay() ?? $billingDate->copy();
             $periodEnd = match ($subscription->package->billing_cycle) {
+                'daily' => $periodStart->copy(),
                 'weekly' => $periodStart->copy()->addWeek()->subDay(),
                 'quarterly' => $periodStart->copy()->addMonths(3)->subDay(),
                 'annual', 'yearly' => $periodStart->copy()->addYear()->subDay(),
@@ -32,11 +43,20 @@ class InvoiceGenerationService
                 ->whereDate('period_start', $periodStart)
                 ->whereDate('period_end', $periodEnd)
                 ->first();
-            if ($existing) return $existing;
+
+            if ($existing) {
+                // Recover safely if an invoice was created before the billing
+                // cursor advanced (for example, by a previous manual run).
+                if (! $subscription->next_billing_at || $subscription->next_billing_at->startOfDay()->equalTo($periodStart)) {
+                    $subscription->update(['next_billing_at' => $periodEnd->copy()->addDay()]);
+                }
+
+                return $existing;
+            }
 
             $amount = (float) $subscription->recurring_price;
             $invoice = Invoice::create([
-                'invoice_number' => 'INV-' . now()->format('Ym') . '-' . strtoupper(bin2hex(random_bytes(4))),
+                'invoice_number' => 'INV-' . $billingDate->format('Ym') . '-' . strtoupper(bin2hex(random_bytes(4))),
                 'customer_id' => $subscription->customer_id,
                 'subscription_id' => $subscription->id,
                 'invoice_date' => $billingDate,
@@ -60,10 +80,11 @@ class InvoiceGenerationService
                 'unit_price' => $amount,
                 'discount_amount' => 0,
                 'tax_amount' => 0,
-                'total_amount' => $amount,
+                'line_total' => $amount,
             ]);
 
             $subscription->update(['next_billing_at' => $periodEnd->copy()->addDay()]);
+
             return $invoice->fresh(['items']);
         });
     }

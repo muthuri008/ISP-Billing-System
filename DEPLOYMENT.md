@@ -1,132 +1,54 @@
-# Stellar Technologies — Production Deployment
+# Stellar Technologies production deployment
 
-## 1. Server prerequisites
+## Before first deployment
 
-Use a supported Linux server with Docker Engine and Docker Compose plugin installed. Point your DNS record at the server before enabling HTTPS.
+1. Provision a supported Linux VPS and point the production DNS name to it.
+2. Copy the root `.env.example` to `.env` for Docker Compose's database variable interpolation. Use unique, long random database credentials.
+3. Copy `backend/.env.example` to `backend/.env`. Set a unique `APP_KEY`, `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` to the public HTTPS API URL, `CORS_ALLOWED_ORIGINS` to the exact frontend origin, and make its DB credentials match the root `.env` values.
+4. If the frontend is hosted separately on Vercel, set its build variable `VITE_API_URL` to the API base URL ending in `/api/v1` (for example, `https://api.example.com/api/v1`). Do not use a wildcard CORS origin in production.
+5. Configure an external TLS reverse proxy (for example, Caddy or a managed load balancer) in front of the frontend service. Do not expose the application over plain HTTP to the public internet.
+6. Set the production M-Pesa Daraja credentials and HTTPS callback URL through the deployment secret manager. Never commit secrets.
+7. Restrict database, Redis, PHP-FPM and backend-web ports to the private Docker network. Only the TLS entry point should be public.
 
-## 2. Clone
+Committed `backend/composer.lock` and `frontend/package-lock.json` make dependency installation reproducible. CI and production Docker builds use these lockfiles; do not run dependency updates directly on the production server.
 
-```bash
-git clone https://github.com/muthuri008/ISP-Billing-System.git
-cd ISP-Billing-System
-```
+## First deployment / migrations
 
-## 3. Configure backend
-
-```bash
-cp backend/.env.example backend/.env
-```
-
-Set production values in `backend/.env`:
-
-- `APP_ENV=production`
-- `APP_DEBUG=false`
-- `APP_URL=https://YOUR-DOMAIN`
-- a unique `APP_KEY`
-- production MySQL credentials
-- Redis connection
-- M-Pesa production credentials/callback
-- MikroTik/RADIUS credentials
-- billing lifecycle settings
-
-Never commit `backend/.env`.
-
-## 4. Configure Docker secrets
-
-Create a root database password in the deployment environment:
+Build the images and run migrations as an explicit release step:
 
 ```bash
-export DB_DATABASE=isp_billing
-export DB_USERNAME=isp_billing
-export DB_PASSWORD='CHANGE_THIS'
-export DB_ROOT_PASSWORD='CHANGE_THIS_TOO'
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml --profile deploy run --rm migrate
+docker compose -f docker-compose.prod.yml up -d
 ```
 
-## 5. Start
+The migration service is deliberately opt-in; do not run schema changes implicitly every time the web container restarts. Back up the database and verify the backup before applying production migrations.
 
-```bash
-docker compose -f docker-compose.prod.yml up -d --build
-```
+## Runtime services
 
-Check containers:
+- `backend`: PHP-FPM application runtime.
+- `backend-web`: internal Nginx/PHP-FPM gateway.
+- `frontend`: static frontend and same-origin `/api` reverse proxy.
+- `queue`: Laravel queue worker.
+- `scheduler`: Laravel scheduler process.
+- `mysql` and `redis`: persistent application dependencies.
 
-```bash
-docker compose -f docker-compose.prod.yml ps
-```
+The scheduler is configured in `backend/routes/console.php`. Confirm the queue connection and any jobs requiring asynchronous execution before relying on queue processing.
 
-## 6. Verify Laravel
+## Operational checks required before launch
 
-```bash
-docker compose -f docker-compose.prod.yml exec backend php artisan about
-docker compose -f docker-compose.prod.yml exec backend php artisan migrate:status
-docker compose -f docker-compose.prod.yml exec backend php artisan test
-```
-
-## 7. Scheduler and queues
-
-The application scheduler must run continuously. In production use a dedicated scheduler process/container running:
-
-```bash
-php artisan schedule:work
-```
-
-Run a queue worker for Redis-backed jobs:
-
-```bash
-php artisan queue:work --sleep=3 --tries=3 --timeout=120
-```
-
-Do not rely on a browser request to trigger scheduled billing work.
-
-## 8. HTTPS
-
-Put a TLS-enabled reverse proxy/load balancer in front of the application. Only expose HTTPS publicly. Redirect HTTP to HTTPS and use a valid certificate.
-
-The included frontend Nginx container serves the SPA over HTTP internally.
-
-## 9. Backups
-
-Back up MySQL daily and retain multiple generations. Test restoration regularly. Backups must not be stored only on the same server.
-
-Example logical backup:
-
-```bash
-docker compose -f docker-compose.prod.yml exec -T mysql mysqldump -u"$DB_USERNAME" -p"$DB_PASSWORD" "$DB_DATABASE" > backup.sql
-```
-
-## 10. ISP integrations
-
-Before live service:
-
-1. Configure the MikroTik router and API credentials.
-2. Configure RADIUS authentication/accounting.
-3. Create matching MikroTik/RADIUS package profiles.
-4. Configure the M-Pesa callback URL over HTTPS.
-5. Test duplicate transaction handling.
-6. Test payment allocation and invoice settlement.
-7. Test billing suspension with the dry-run lifecycle command first.
-8. Test restoration using a controlled test customer.
-
-## 11. First launch checklist
-
-- [ ] HTTPS working
-- [ ] `APP_DEBUG=false`
-- [ ] `APP_KEY` generated and backed up securely
-- [ ] Database migrations successful
-- [ ] Redis healthy
-- [ ] Queue worker running
-- [ ] Scheduler running
-- [ ] Admin authentication tested
-- [ ] Customer portal tested
-- [ ] M-Pesa sandbox tested before production
-- [ ] MikroTik test router connected
-- [ ] RADIUS authentication tested
-- [ ] Accounting tested
-- [ ] Billing suspension dry-run reviewed
-- [ ] Billing restoration tested
-- [ ] Database backup verified
-- [ ] Monitoring/logging configured
+- Verify HTTPS, DNS, certificate renewal, firewall rules and trusted proxy configuration.
+- Verify `/up` and `/api/v1/health` from outside the VPS.
+- Run the full backend test suite and frontend production build.
+- Verify an administrator login and role/permission boundaries.
+- Test customer portal isolation using two different customer accounts.
+- Complete an end-to-end Daraja sandbox STK push, callback, duplicate callback and invoice allocation test.
+- Verify MikroTik provisioning and session disconnection on a test router.
+- Verify FreeRADIUS authentication and accounting against the actual RADIUS server and router.
+- Test invoice generation, overdue suspension and payment-driven restoration.
+- Configure encrypted off-site backups and perform a restore drill to a separate database.
+- Configure log collection, alerting, disk monitoring and uptime monitoring.
 
 ## Important
 
-Do not place real M-Pesa, MikroTik, RADIUS, database or application secrets in GitHub. Use the server environment or a secrets manager.
+A successful container build or health endpoint is not proof of live payment, router or RADIUS integration. Do not accept real customer payments or automate customer disconnections until the relevant sandbox/hardware tests have passed.
