@@ -130,7 +130,7 @@ class PaymentAllocationTest extends TestCase
         ]);
 
         $this->expectException(RuntimeException::class);
-        app(InvoiceSettlementService::class)->allocate($payment, $invoice);
+        app(\App\Services\Billing\PaymentServiceV2::class)->allocate($payment, $invoice, 100);
     }
 
     public function test_payment_currency_must_match_invoice_currency(): void
@@ -161,6 +161,6 @@ class PaymentAllocationTest extends TestCase
         ]);
 
         $this->expectException(RuntimeException::class);
-        app(InvoiceSettlementService::class)->allocate($payment, $invoice);
+        app(\App\Services\Billing\PaymentServiceV2::class)->allocate($payment, $invoice, 100);
     }
 }
