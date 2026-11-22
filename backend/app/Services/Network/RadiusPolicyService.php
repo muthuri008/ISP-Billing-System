@@ -14,7 +14,7 @@ class RadiusPolicyService
     {
         return RadiusProfile::updateOrCreate(
             ['package_id' => $package->id],
-            ['name' => 'PKG-'.$package->id, 'download_speed' => $package->download_mbps, 'upload_speed' => $package->upload_mbps, 'attributes' => ['Mikrotik-Rate-Limit' => $package->download_speed.'/'.$package->upload_speed]]
+            ['name' => 'PKG-'.$package->id, 'download_speed' => $package->download_mbps, 'upload_speed' => $package->upload_mbps, 'attributes' => ['Mikrotik-Rate-Limit' => $package->download_mbps.'/'.$package->upload_mbps]]
         );
     }
 
