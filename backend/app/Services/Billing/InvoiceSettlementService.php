@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Services\Billing;
+namespace App\\Services\\Billing;
 
-use App\Models\Invoice;
-use App\Models\Payment;
-use App\Models\PaymentAllocation;
-use Illuminate\Support\Facades\DB;
+use App\\Models\\Invoice;
+use App\\Models\\Payment;
+use App\\Models\\PaymentAllocation;
+use Illuminate\\Support\\Facades\\DB;
 use RuntimeException;
 
 class InvoiceSettlementService
@@ -22,6 +22,12 @@ class InvoiceSettlementService
             if ($payment->customer_id !== $invoice->customer_id) {
                 throw new RuntimeException('Payment and invoice belong to different customers.');
             }
+            if (! in_array($invoice->status, ['issued', 'overdue', 'partially_paid'], true)) {
+                throw new RuntimeException('Only issued or overdue invoices can receive allocations.');
+            }
+            if (strtoupper((string) $payment->currency) !== strtoupper((string) $invoice->currency)) {
+                throw new RuntimeException('Payment and invoice currencies must match.');
+            }
 
             $alreadyAllocated = (float) PaymentAllocation::where('payment_id', $payment->id)->sum('amount');
             $invoicePaid = (float) PaymentAllocation::where('invoice_id', $invoice->id)->sum('amount');
@@ -29,12 +35,18 @@ class InvoiceSettlementService
             $invoiceRemaining = (float) $invoice->total_amount - $invoicePaid;
             $allocation = $amount === null ? min($paymentRemaining, $invoiceRemaining) : $amount;
 
-            if ($allocation <= 0) throw new RuntimeException('No amount remains to allocate.');
+            if ($allocation <= 0) {
+                throw new RuntimeException('No amount remains to allocate.');
+            }
             if ($allocation > $paymentRemaining || $allocation > $invoiceRemaining) {
                 throw new RuntimeException('Allocation exceeds the available payment or invoice balance.');
             }
 
-            $record = PaymentAllocation::create(['payment_id' => $payment->id, 'invoice_id' => $invoice->id, 'amount' => $allocation]);
+            $record = PaymentAllocation::create([
+                'payment_id' => $payment->id,
+                'invoice_id' => $invoice->id,
+                'amount' => $allocation,
+            ]);
             $newPaid = $invoicePaid + $allocation;
             $invoice->update([
                 'amount_paid' => $newPaid,
@@ -50,16 +62,22 @@ class InvoiceSettlementService
     {
         $payment->loadMissing('allocations');
         $remaining = (float) $payment->amount - (float) $payment->allocations->sum('amount');
-        if ($remaining <= 0) return $payment->fresh('allocations.invoice');
+        if ($remaining <= 0) {
+            return $payment->fresh('allocations.invoice');
+        }
 
         $invoices = Invoice::where('customer_id', $payment->customer_id)
+            ->whereIn('status', ['issued', 'overdue', 'partially_paid'])
             ->where('amount_due', '>', 0)
+            ->where('currency', $payment->currency)
             ->orderBy('due_date')
             ->orderBy('id')
             ->get();
 
         foreach ($invoices as $invoice) {
-            if ($remaining <= 0) break;
+            if ($remaining <= 0) {
+                break;
+            }
             $allocation = min($remaining, (float) $invoice->amount_due);
             $this->allocate($payment, $invoice, $allocation);
             $remaining -= $allocation;
