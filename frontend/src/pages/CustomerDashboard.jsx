@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+const API = import.meta.env.VITE_API_URL || '/api/v1';
 
 export default function CustomerDashboard() {
   const [data, setData] = useState(null);
