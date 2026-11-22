@@ -1,11 +1,11 @@
 <?php
 
-namespace App\\Services\\Billing;
+namespace App\Services\Billing;
 
-use App\\Models\\Invoice;
-use App\\Models\\Payment;
-use App\\Models\\PaymentAllocation;
-use Illuminate\\Support\\Facades\\DB;
+use App\Models\Invoice;
+use App\Models\Payment;
+use App\Models\PaymentAllocation;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class InvoiceSettlementService
