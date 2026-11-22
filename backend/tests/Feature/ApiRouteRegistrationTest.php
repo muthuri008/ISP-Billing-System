@@ -17,7 +17,7 @@ class ApiRouteRegistrationTest extends TestCase
         $this->postJson('/api/v1/auth/login', [
             'email' => 'not-a-real-user@example.test',
             'password' => 'invalid-password',
-        ])->assertUnauthorized();
+        ])->assertUnprocessable();
 
         $this->assertNotNull(app('limiter')->limiter('login'));
     }
