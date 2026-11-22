@@ -171,6 +171,24 @@ class MpesaPaymentService
                     ->where('customer_id', $payment->customer_id)
                     ->findOrFail($invoiceId);
 
+                if (
+                    ! in_array($invoice->status, ['issued', 'overdue', 'partially_paid'], true)
+                    || (float) $invoice->amount_due <= 0
+                    || strtoupper((string) $invoice->currency) !== 'KES'
+                ) {
+                    // Safaricom has confirmed receipt of funds, so preserve the
+                    // completed payment even if the target invoice can no longer
+                    // accept an automatic allocation. Flag it for reconciliation.
+                    $payment->update([
+                        'metadata' => array_merge($payment->metadata ?? [], [
+                            'allocation_status' => 'requires_manual_review',
+                            'allocation_review_reason' => 'The invoice is no longer payable or does not match the M-Pesa currency.',
+                        ]),
+                    ]);
+
+                    return $payment->fresh('allocations.invoice');
+                }
+
                 $this->settlements->allocate($payment, $invoice);
 
                 return $payment->fresh('allocations.invoice');
