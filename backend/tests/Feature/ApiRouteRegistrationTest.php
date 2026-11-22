@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
 class ApiRouteRegistrationTest extends TestCase
 {
     use RefreshDatabase;
+
     public function test_invoice_api_routes_are_registered_under_the_v1_prefix(): void
     {
         // A 401 proves that the route exists and auth middleware ran.
