@@ -42,11 +42,23 @@ class InvoiceSettlementService
                 throw new RuntimeException('Allocation exceeds the available payment or invoice balance.');
             }
 
-            $record = PaymentAllocation::create([
-                'payment_id' => $payment->id,
-                'invoice_id' => $invoice->id,
-                'amount' => $allocation,
-            ]);
+            $existingAllocation = PaymentAllocation::query()
+                ->where('payment_id', $payment->id)
+                ->where('invoice_id', $invoice->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existingAllocation) {
+                $existingAllocation->update(['amount' => (float) $existingAllocation->amount + $allocation]);
+                $record = $existingAllocation->fresh();
+            } else {
+                $record = PaymentAllocation::create([
+                    'payment_id' => $payment->id,
+                    'invoice_id' => $invoice->id,
+                    'amount' => $allocation,
+                ]);
+            }
+
             $newPaid = $invoicePaid + $allocation;
             $invoice->update([
                 'amount_paid' => $newPaid,
