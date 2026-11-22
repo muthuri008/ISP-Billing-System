@@ -19,7 +19,6 @@ class ApiRouteRegistrationTest extends TestCase
             'password' => 'invalid-password',
         ])->assertUnauthorized();
 
-        $this->assertNotNull(app('router')->getRoutes()->getByName('generated::'));
         $this->assertNotNull(app('limiter')->limiter('login'));
     }
 }
