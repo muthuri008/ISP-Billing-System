@@ -163,4 +163,48 @@ class PaymentAllocationTest extends TestCase
         $this->expectException(RuntimeException::class);
         app(\App\Services\Billing\PaymentServiceV2::class)->allocate($payment, $invoice, 100);
     }
+    public function test_one_payment_can_be_allocated_to_the_same_invoice_in_multiple_parts(): void
+    {
+        $customer = Customer::factory()->create();
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-ALLOC-REPEAT',
+            'customer_id' => $customer->id,
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(7)->toDateString(),
+            'status' => 'issued',
+            'subtotal' => 1000,
+            'discount_amount' => 0,
+            'tax_amount' => 0,
+            'total_amount' => 1000,
+            'amount_paid' => 0,
+            'amount_due' => 1000,
+            'currency' => 'KES',
+        ]);
+        $payment = Payment::create([
+            'payment_number' => 'PAY-ALLOC-REPEAT',
+            'customer_id' => $customer->id,
+            'method' => 'manual',
+            'amount' => 1000,
+            'currency' => 'KES',
+            'status' => 'completed',
+            'paid_at' => now(),
+        ]);
+
+        $settlement = app(InvoiceSettlementService::class);
+        $settlement->allocate($payment, $invoice, 400);
+        $settlement->allocate($payment, $invoice->fresh(), 600);
+
+        $this->assertDatabaseCount('payment_allocations', 1);
+        $this->assertDatabaseHas('payment_allocations', [
+            'payment_id' => $payment->id,
+            'invoice_id' => $invoice->id,
+            'amount' => 1000,
+        ]);
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->id,
+            'status' => 'paid',
+            'amount_due' => 0,
+        ]);
+    }
+
 }
