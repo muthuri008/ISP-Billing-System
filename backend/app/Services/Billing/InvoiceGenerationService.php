@@ -45,6 +45,12 @@ class InvoiceGenerationService
                 ->first();
 
             if ($existing) {
+                // Recover safely if an invoice was created before the billing
+                // cursor advanced (for example, by a previous manual run).
+                if (! $subscription->next_billing_at || $subscription->next_billing_at->startOfDay()->equalTo($periodStart)) {
+                    $subscription->update(['next_billing_at' => $periodEnd->copy()->addDay()]);
+                }
+
                 return $existing;
             }
 
