@@ -101,4 +101,66 @@ class PaymentAllocationTest extends TestCase
         $this->expectException(RuntimeException::class);
         app(InvoiceSettlementService::class)->allocate($payment, $invoice);
     }
+
+    public function test_void_invoice_cannot_receive_a_payment_allocation(): void
+    {
+        $customer = Customer::factory()->create();
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-VOID-GUARD',
+            'customer_id' => $customer->id,
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(7)->toDateString(),
+            'status' => 'void',
+            'subtotal' => 100,
+            'discount_amount' => 0,
+            'tax_amount' => 0,
+            'total_amount' => 100,
+            'amount_paid' => 0,
+            'amount_due' => 100,
+            'currency' => 'KES',
+        ]);
+        $payment = Payment::create([
+            'payment_number' => 'PAY-VOID-GUARD',
+            'customer_id' => $customer->id,
+            'method' => 'manual',
+            'amount' => 100,
+            'currency' => 'KES',
+            'status' => 'completed',
+            'paid_at' => now(),
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        app(InvoiceSettlementService::class)->allocate($payment, $invoice);
+    }
+
+    public function test_payment_currency_must_match_invoice_currency(): void
+    {
+        $customer = Customer::factory()->create();
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-CURRENCY-GUARD',
+            'customer_id' => $customer->id,
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(7)->toDateString(),
+            'status' => 'issued',
+            'subtotal' => 100,
+            'discount_amount' => 0,
+            'tax_amount' => 0,
+            'total_amount' => 100,
+            'amount_paid' => 0,
+            'amount_due' => 100,
+            'currency' => 'USD',
+        ]);
+        $payment = Payment::create([
+            'payment_number' => 'PAY-CURRENCY-GUARD',
+            'customer_id' => $customer->id,
+            'method' => 'manual',
+            'amount' => 100,
+            'currency' => 'KES',
+            'status' => 'completed',
+            'paid_at' => now(),
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        app(InvoiceSettlementService::class)->allocate($payment, $invoice);
+    }
 }
