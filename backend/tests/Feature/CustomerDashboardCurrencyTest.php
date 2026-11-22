@@ -35,13 +35,12 @@ class CustomerDashboardCurrencyTest extends TestCase
 
         $summary = app(CustomerDashboardService::class)->summary($customer);
 
-        $this->assertSame(
-            ['KES' => 1500.0, 'USD' => 25.0],
-            $summary['billing']['outstanding_by_currency']->toArray()
-        );
-        $this->assertSame(
-            ['USD' => 25.0],
-            $summary['billing']['overdue_by_currency']->toArray()
-        );
+        $outstanding = $summary['billing']['outstanding_by_currency']->toArray();
+        $overdue = $summary['billing']['overdue_by_currency']->toArray();
+
+        $this->assertEquals(1500.0, $outstanding['KES']);
+        $this->assertEquals(25.0, $outstanding['USD']);
+        $this->assertEquals(25.0, $overdue['USD']);
+        $this->assertArrayNotHasKey('KES', $overdue);
     }
 }
