@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 const API = import.meta.env.VITE_API_URL || '/api/v1';
 
-export default function CustomerDashboard() {
+function formatCurrencyTotals(totals) {\n  const entries = Object.entries(totals || {});\n  return entries.length ? entries.map(([currency, amount]) => `${currency} ${Number(amount).toLocaleString()}`).join(' · ') : '—';\n}\n\nexport default function CustomerDashboard() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
 
@@ -30,17 +30,17 @@ export default function CustomerDashboard() {
       </header>
 
       <section className="stats">
-        <article><span>Outstanding</span><strong>KES {Number(data.billing.outstanding).toLocaleString()}</strong></article>
-        <article><span>Overdue</span><strong>KES {Number(data.billing.overdue).toLocaleString()}</strong></article>
+        <article><span>Outstanding</span><strong>{formatCurrencyTotals(data.billing.outstanding_by_currency)}</strong></article>
+        <article><span>Overdue</span><strong>{formatCurrencyTotals(data.billing.overdue_by_currency)}</strong></article>
         <article><span>Open invoices</span><strong>{data.billing.open_invoices}</strong></article>
       </section>
 
       <section className="portal-grid">
         <article className="panel"><h2>Services</h2>{data.services.length ? data.services.map((service) => <div className="row" key={service.id}><div><strong>{service.username}</strong><small>Router #{service.router_id || '—'}</small></div><span className={`status ${service.status}`}>{service.status}</span></div>) : <p>No active services found.</p>}</article>
-        <article className="panel"><h2>Recent payments</h2>{data.recent_payments.length ? data.recent_payments.map((payment) => <div className="row" key={payment.id}><div><strong>{payment.payment_number}</strong><small>{payment.method} · {payment.transaction_reference || 'Pending reference'}</small></div><strong>KES {Number(payment.amount).toLocaleString()}</strong></div>) : <p>No payments yet.</p>}</article>
+        <article className="panel"><h2>Recent payments</h2>{data.recent_payments.length ? data.recent_payments.map((payment) => <div className="row" key={payment.id}><div><strong>{payment.payment_number}</strong><small>{payment.method} · {payment.transaction_reference || 'Pending reference'}</small></div><strong>{payment.currency} {Number(payment.amount).toLocaleString()}</strong></div>) : <p>No payments yet.</p>}</article>
       </section>
 
-      <section className="panel"><div className="panel-title"><h2>Recent invoices</h2><a href="#invoices">View all</a></div>{data.recent_invoices.map((invoice) => <div className="row" key={invoice.id}><div><strong>{invoice.invoice_number}</strong><small>Due {invoice.due_date || '—'}</small></div><div className="invoice-amount"><strong>KES {Number(invoice.amount_due).toLocaleString()}</strong><span className={`status ${invoice.status}`}>{invoice.status}</span></div></div>)}</section>
+      <section className="panel"><div className="panel-title"><h2>Recent invoices</h2><a href="#invoices">View all</a></div>{data.recent_invoices.map((invoice) => <div className="row" key={invoice.id}><div><strong>{invoice.invoice_number}</strong><small>Due {invoice.due_date || '—'}</small></div><div className="invoice-amount"><strong>{invoice.currency} {Number(invoice.amount_due).toLocaleString()}</strong><span className={`status ${invoice.status}`}>{invoice.status}</span></div></div>)}</section>
     </main>
   );
 }
