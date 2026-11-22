@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import './admin.css';
-import { clearToken, hasToken } from './api';
+import { api, clearToken, hasToken } from './api';
 import Login from './Login';
 import NetworkPage from './NetworkPage';
 import CustomersPage from './CustomersPage';
@@ -38,7 +38,7 @@ export default function App() {
       <div className="sideStatus"><span className={`dot ${status}`} /> API {status}</div>
     </aside>
     <main className="main">
-      <header className="topbar"><div><small>STELLAR TECHNOLOGIES</small><h1>{active}</h1></div><div className="profile"><div className="avatar">ST</div><span>Administrator</span><button className="logout" onClick={() => { clearToken(); setAuthenticated(false); }}>Sign out</button></div></header>
+      <header className="topbar"><div><small>STELLAR TECHNOLOGIES</small><h1>{active}</h1></div><div className="profile"><div className="avatar">ST</div><span>Administrator</span><button className="logout" onClick={async () => { try { await api('/auth/logout', { method: 'POST' }); } catch { /* Clear the local session even if the API is unreachable. */ } finally { clearToken(); setAuthenticated(false); } }}>Sign out</button></div></header>
       {active === 'Dashboard' ? <Dashboard status={status} />
         : active === 'Customers' ? <CustomersPage />
         : active === 'Packages' ? <PackagesPage />
