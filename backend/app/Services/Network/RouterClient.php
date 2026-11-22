@@ -28,13 +28,27 @@ class RouterClient
 
     public function createPppSecret(string $username, string $password, string $profile, bool $disabled): void
     {
-        $this->send('PUT', '/rest/ppp/secret', [
+        $payload = [
             'name' => $username,
             'password' => $password,
             'service' => 'pppoe',
             'profile' => $profile,
             'disabled' => $disabled ? 'yes' : 'no',
-        ]);
+        ];
+
+        // Provisioning is intentionally idempotent: update an existing PPP
+        // secret rather than failing with a duplicate-name error on retries.
+        $existing = collect($this->send('GET', '/rest/ppp/secret'))->first(
+            fn (array $item): bool => ($item['name'] ?? null) === $username
+        );
+        $resourceId = $existing['.id'] ?? null;
+
+        if (is_string($resourceId) && $resourceId !== '') {
+            $this->send('PATCH', '/rest/ppp/secret/'.rawurlencode($resourceId), $payload);
+            return;
+        }
+
+        $this->send('PUT', '/rest/ppp/secret', $payload);
     }
 
     public function setUserDisabled(string $username, bool $disabled): void
