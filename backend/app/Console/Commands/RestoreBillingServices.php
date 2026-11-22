@@ -21,8 +21,9 @@ class RestoreBillingServices extends Command
                     $reason = ($account->provisioning_metadata ?? [])['billing_suspension'] ?? null;
                     if ($account->status !== 'suspended' || !$reason || (int)($reason['invoice_id'] ?? 0) !== (int)$invoice->id) continue;
                     if ($this->option('dry-run')) { $this->line("Would restore {$account->username} for {$invoice->invoice_number}."); continue; }
-                    $billingLifecycle->restoreAfterBilling($account, $invoice);
-                    $restored++;
+                    if ($billingLifecycle->restoreAfterBilling($account, $invoice)) {
+                        $restored++;
+                    }
                 }
             }
         });
