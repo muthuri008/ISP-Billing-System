@@ -38,7 +38,6 @@ class MpesaPaymentService
                 ->where('customer_id', $invoice->customer_id)
                 ->where('status', 'pending')
                 ->where('metadata->invoice_id', $invoice->id)
-                ->where('created_at', '>=', now()->subMinutes(5))
                 ->exists();
 
             if ($pendingRequestExists) {
