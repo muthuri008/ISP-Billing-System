@@ -5,6 +5,7 @@ use App\Models\Invoice;
 use App\Models\Package;
 use App\Models\Subscription;
 use App\Services\Billing\InvoiceGenerationService;
+use App\Services\Billing\InvoiceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 
