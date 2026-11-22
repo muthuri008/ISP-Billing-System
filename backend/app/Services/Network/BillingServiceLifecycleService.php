@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Services\Network;
+namespace App\\Services\\Network;
 
-use App\Models\Invoice;
-use App\Models\ServiceAccount;
-use App\Services\Audit\AuditLogger;
-use Illuminate\Support\Facades\DB;
+use App\\Models\\Invoice;
+use App\\Models\\ServiceAccount;
+use App\\Services\\Audit\\AuditLogger;
+use Illuminate\\Support\\Facades\\DB;
 
 class BillingServiceLifecycleService
 {
@@ -33,9 +33,26 @@ class BillingServiceLifecycleService
 
     public function restoreAfterBilling(ServiceAccount $account, Invoice $invoice): ?ServiceAccount
     {
+        $account->refresh();
         $metadata = $account->provisioning_metadata ?? [];
         $reason = $metadata['billing_suspension'] ?? null;
-        if (!$reason || (int)($reason['invoice_id'] ?? 0) !== (int)$invoice->id) {
+
+        if (! $reason || (int) ($reason['invoice_id'] ?? 0) !== (int) $invoice->id) {
+            return null;
+        }
+
+        // Never restore access while another overdue invoice for this same
+        // subscription remains unpaid.
+        $hasOtherOverdueInvoice = Invoice::query()
+            ->where('customer_id', $account->customer_id)
+            ->where('subscription_id', $account->subscription_id)
+            ->where('id', '!=', $invoice->id)
+            ->whereIn('status', ['issued', 'overdue', 'partially_paid'])
+            ->where('amount_due', '>', 0)
+            ->whereDate('due_date', '<=', now()->toDateString())
+            ->exists();
+
+        if ($hasOtherOverdueInvoice) {
             return null;
         }
 
