@@ -1,11 +1,11 @@
 <?php
 
-namespace App\\Services\\Network;
+namespace App\Services\Network;
 
-use App\\Models\\Invoice;
-use App\\Models\\ServiceAccount;
-use App\\Services\\Audit\\AuditLogger;
-use Illuminate\\Support\\Facades\\DB;
+use App\Models\Invoice;
+use App\Models\ServiceAccount;
+use App\Services\Audit\AuditLogger;
+use Illuminate\Support\Facades\DB;
 
 class BillingServiceLifecycleService
 {
