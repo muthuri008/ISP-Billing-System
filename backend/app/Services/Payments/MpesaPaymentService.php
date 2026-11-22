@@ -15,17 +15,36 @@ class MpesaPaymentService
         private readonly InvoiceSettlementService $settlements,
     ) {}
 
-    public function initiateInvoiceStkPush(\App\Models\Invoice $invoice, string $phone): array
+    public function initiateInvoiceStkPush(Invoice $invoice, string $phone): array
     {
-        if ((float) $invoice->amount_due <= 0 || $invoice->status === 'paid') {
-            throw new RuntimeException('Invoice has no outstanding balance.');
-        }
-
-        if (abs((float) $invoice->amount_due - round((float) $invoice->amount_due)) > 0.0001) {
-            throw new RuntimeException('M-Pesa STK Push supports whole KES amounts only. Contact support to arrange payment for this invoice.');
-        }
-
         return DB::transaction(function () use ($invoice, $phone) {
+            $invoice = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
+
+            if (! in_array($invoice->status, ['issued', 'overdue', 'partially_paid'], true)) {
+                throw new RuntimeException('This invoice is not payable.');
+            }
+            if (strtoupper((string) $invoice->currency) !== 'KES') {
+                throw new RuntimeException('M-Pesa payments are only supported for KES invoices.');
+            }
+            if ((float) $invoice->amount_due <= 0) {
+                throw new RuntimeException('Invoice has no outstanding balance.');
+            }
+            if (abs((float) $invoice->amount_due - round((float) $invoice->amount_due)) > 0.0001) {
+                throw new RuntimeException('M-Pesa STK Push supports whole KES amounts only. Contact support to arrange payment for this invoice.');
+            }
+
+            $pendingRequestExists = Payment::query()
+                ->where('method', 'mpesa')
+                ->where('customer_id', $invoice->customer_id)
+                ->where('status', 'pending')
+                ->where('metadata->invoice_id', $invoice->id)
+                ->where('created_at', '>=', now()->subMinutes(5))
+                ->exists();
+
+            if ($pendingRequestExists) {
+                throw new RuntimeException('An M-Pesa payment request is already pending for this invoice. Wait for its result before retrying.');
+            }
+
             $payment = Payment::create([
                 'payment_number' => 'PAY-'.now()->format('YmdHis').'-'.str()->upper(str()->random(6)),
                 'customer_id' => $invoice->customer_id,
