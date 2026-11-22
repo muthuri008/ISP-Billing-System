@@ -39,7 +39,19 @@ class RouterClient
 
     public function setUserDisabled(string $username, bool $disabled): void
     {
-        $this->send('PATCH', '/rest/ppp/secret/'.rawurlencode($username), [
+        // RouterOS REST PATCH requires the record's internal .id, not the
+        // PPP secret's display name. Resolve the ID before changing the record.
+        $secrets = $this->send('GET', '/rest/ppp/secret');
+        $secret = collect($secrets)->first(
+            fn (array $item): bool => ($item['name'] ?? null) === $username
+        );
+
+        $resourceId = $secret['.id'] ?? null;
+        if (! is_string($resourceId) || $resourceId === '') {
+            throw new RuntimeException('The PPP secret could not be found on the router.');
+        }
+
+        $this->send('PATCH', '/rest/ppp/secret/'.rawurlencode($resourceId), [
             'disabled' => $disabled ? 'yes' : 'no',
         ]);
     }
