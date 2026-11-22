@@ -21,6 +21,6 @@ class ApiRouteRegistrationTest extends TestCase
             'password' => 'invalid-password',
         ])->assertUnprocessable();
 
-        $this->assertNotNull(app('limiter')->limiter('login'));
+        $this->assertNotNull(RateLimiter::limiter('login'));
     }
 }
