@@ -4,15 +4,12 @@ namespace App\Services\Billing;
 
 use App\Models\Invoice;
 use App\Models\Payment;
-use App\Services\Network\ServiceLifecycleService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class PaymentService
 {
-    public function __construct(private readonly ServiceLifecycleService $lifecycle) {}
-
     public function record(array $data): Payment
     {
         return DB::transaction(function () use ($data) {
