@@ -1,10 +1,10 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\\Seeders;
 
-use App\Models\Permission;
-use App\Models\Role;
-use Illuminate\Database\Seeder;
+use App\\Models\\Permission;
+use App\\Models\\Role;
+use Illuminate\\Database\\Seeder;
 
 class RbacSeeder extends Seeder
 {
@@ -15,6 +15,8 @@ class RbacSeeder extends Seeder
             ['name' => 'Manage Customers', 'slug' => 'customers.manage', 'module' => 'customers'],
             ['name' => 'Manage Packages', 'slug' => 'packages.manage', 'module' => 'packages'],
             ['name' => 'Manage Routers', 'slug' => 'routers.manage', 'module' => 'network'],
+            ['name' => 'Manage Network', 'slug' => 'network.manage', 'module' => 'network'],
+            ['name' => 'Manage Subscriptions', 'slug' => 'subscriptions.manage', 'module' => 'subscriptions'],
             ['name' => 'Manage Billing', 'slug' => 'billing.manage', 'module' => 'billing'],
             ['name' => 'Manage Payments', 'slug' => 'payments.manage', 'module' => 'payments'],
             ['name' => 'View Reports', 'slug' => 'reports.view', 'module' => 'reports'],
